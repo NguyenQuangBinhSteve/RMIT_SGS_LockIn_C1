@@ -126,6 +126,20 @@ def main(cfg: Config = None):
         id2label=ID2LABEL,
     )
 
+    # 6. Tự động Hậu xử lý (Tối ưu ngưỡng Nelder-Mead trên OOF + Rule Tiếng Việt)
+    try:
+        from postprocess import run_postprocess
+        print("\n" + "=" * 60)
+        print("TỰ ĐỘNG CHẠY HẬU XỬ LÝ (POST-PROCESSING)...")
+        print("=" * 60)
+        run_postprocess(
+            exp_name=cfg.EXP_NAME,
+            output_dir=cfg.OUTPUT_DIR,
+            data_dir=cfg.DATA_DIR,
+        )
+    except Exception as e:
+        print(f"[!] Không thể chạy hậu xử lý tự động: {e}")
+
 
 if __name__ == "__main__":
     main()
