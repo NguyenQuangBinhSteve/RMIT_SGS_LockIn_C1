@@ -15,9 +15,19 @@ VI_PATTERN = r"[đĐưƯơƠạảấầẩẫậắằẳẵặẹẻẽếề�
 
 def optimize_class_weights(y_true: np.ndarray, oof_probs: np.ndarray) -> np.ndarray:
     """
-    Dùng thuật toán Nelder-Mead tối ưu hóa bộ trọng số [w0, w1, w2]
+    Dùng thuật toán Nelder-Mead tối ưu hóa bộ trọng số [w0, w1, ..., wN]
     để trực tiếp TỐI ĐA HÓA điểm MACRO F1 trên tập Out-Of-Fold (OOF).
     """
+    # FIX #1: Kiểm tra shape nhất quán giữa y_true và oof_probs
+    if len(y_true) != oof_probs.shape[0]:
+        raise ValueError(
+            f"Shape mismatch: y_true có {len(y_true)} mẫu nhưng oof_probs có "
+            f"{oof_probs.shape[0]} hàng. Đảm bảo OOF được tạo từ cùng tập train."
+        )
+
+    # FIX #2: Không hard-code số lớp = 3; suy ra từ shape của oof_probs
+    n_classes = oof_probs.shape[1]
+
     baseline_preds = np.argmax(oof_probs, axis=1)
     baseline_f1 = f1_score(y_true, baseline_preds, average="macro", zero_division=0)
     print(f"[*] Baseline OOF Macro F1 (argmax mặc định): {baseline_f1:.4f}")
@@ -31,7 +41,7 @@ def optimize_class_weights(y_true: np.ndarray, oof_probs: np.ndarray) -> np.ndar
         score = f1_score(y_true, preds, average="macro", zero_division=0)
         return -score
 
-    init_weights = np.array([1.0, 1.0, 1.0])
+    init_weights = np.ones(n_classes)  # FIX #2: khởi tạo động theo n_classes
     res = minimize(
         loss_func,
         init_weights,
@@ -48,9 +58,9 @@ def optimize_class_weights(y_true: np.ndarray, oof_probs: np.ndarray) -> np.ndar
     print(
         f"[+] Tuned OOF Macro F1 (sau khi chỉnh ngưỡng): {tuned_f1:.4f} (+{(tuned_f1 - baseline_f1)*100:.2f}%)"
     )
-    print(
-        f"[+] Bộ trọng số lớp tối ưu: BENIGN={best_w[0]:.2f}, JAILBREAK={best_w[1]:.2f}, INJECTION={best_w[2]:.2f}\n"
-    )
+    label_names = [ID2LABEL.get(i, str(i)) for i in range(n_classes)]
+    weight_str = ", ".join(f"{name}={best_w[i]:.2f}" for i, name in enumerate(label_names))
+    print(f"[+] Bộ trọng số lớp tối ưu: {weight_str}\n")
     return best_w
 
 
@@ -59,9 +69,13 @@ def run_postprocess(
     output_dir: str = None,
     data_dir: str = None,
     apply_vi_rule: bool = True,
+    vi_boost_factor: float = 5.0,
 ):
     output_dir = output_dir or resolve_output_dir()
     data_dir = data_dir or resolve_data_dir()
+
+    # FIX #4: Đảm bảo output_dir tồn tại trước khi ghi file
+    os.makedirs(output_dir, exist_ok=True)
 
     # 1. Tìm file xác suất
     test_npy_files = glob.glob(os.path.join(output_dir, "*_test.npy"))
@@ -98,9 +112,22 @@ def run_postprocess(
     if os.path.exists(oof_npy_path) and os.path.exists(train_csv_path):
         print("\n[BƯỚC 1]: TỐI ƯU HÓA NGƯỠNG PHÂN LOẠI TRÊN TẬP OOF...")
         train_df = pd.read_csv(train_csv_path)
-        y_true = train_df["label"].map(LABEL2ID).to_numpy()
-        oof_probs = np.load(oof_npy_path)
 
+        # FIX #5: Hỗ trợ cả cột "label" (string) lẫn "target" (int) trong train.csv
+        if "label" in train_df.columns:
+            y_true = train_df["label"].map(LABEL2ID).to_numpy()
+        elif "target" in train_df.columns:
+            y_true = train_df["target"].to_numpy()
+        else:
+            raise ValueError(
+                "train.csv không có cột 'label' hoặc 'target'. "
+                f"Các cột hiện có: {list(train_df.columns)}"
+            )
+
+        if np.any(np.isnan(y_true.astype(float))):
+            raise ValueError("Cột label trong train.csv chứa giá trị không hợp lệ sau khi map LABEL2ID.")
+
+        oof_probs = np.load(oof_npy_path)
         weights = optimize_class_weights(y_true, oof_probs)
         # Áp dụng bộ trọng số tối ưu lên xác suất tập test
         test_probs = test_probs * weights
@@ -124,8 +151,20 @@ def run_postprocess(
         print(
             f"[+] Tìm thấy {vi_count} câu có ký tự đặc trưng tiếng Việt trong tập test."
         )
-        # Tăng mạnh xác suất PROMPT_INJECTION cho các câu tiếng Việt
-        test_probs[has_vi, :] = [0.0, 0.0, 1.0]
+        # FIX #3: Dùng soft boost thay vì override cứng [0,0,1]
+        # → Nhân xác suất PROMPT_INJECTION lên vi_boost_factor lần,
+        #   sau đó chuẩn hóa lại để tổng = 1 (vẫn giữ thông tin model cho BENIGN/JAILBREAK).
+        injection_class_idx = LABEL2ID["PROMPT_INJECTION"]
+        if vi_count > 0:
+            test_probs[has_vi, injection_class_idx] *= vi_boost_factor
+            row_sums = test_probs[has_vi].sum(axis=1, keepdims=True)
+            # Tránh chia cho 0 (trường hợp xác suất đều = 0)
+            row_sums = np.where(row_sums == 0, 1.0, row_sums)
+            test_probs[has_vi] = test_probs[has_vi] / row_sums
+        print(
+            f"[+] Đã boost xác suất PROMPT_INJECTION lên x{vi_boost_factor} "
+            f"cho {vi_count} câu tiếng Việt (soft boost, không override cứng)."
+        )
 
     # 5. Bước 3: Xuất file submission hoàn chỉnh
     final_preds = np.argmax(test_probs, axis=1)
@@ -161,6 +200,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--no_vi_rule", action="store_true", help="Không áp dụng luật tiếng Việt"
     )
+    parser.add_argument(
+        "--vi_boost_factor", type=float, default=5.0,
+        help="Hệ số boost xác suất PROMPT_INJECTION cho câu tiếng Việt (mặc định: 5.0)",
+    )
 
     args = parser.parse_args()
     run_postprocess(
@@ -168,4 +211,5 @@ if __name__ == "__main__":
         output_dir=args.output_dir,
         data_dir=args.data_dir,
         apply_vi_rule=not args.no_vi_rule,
+        vi_boost_factor=args.vi_boost_factor,
     )
