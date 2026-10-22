@@ -81,9 +81,16 @@ def train_epoch(model, loader, optimizer, scheduler, criterion, scaler, device, 
             scaler.scale(loss_adv).backward()
             fgm.restore()
 
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
+        scale_before = scaler.get_scale()
         scaler.step(optimizer)
         scaler.update()
-        scheduler.step()
+
+        # Chỉ tăng bước scheduler nếu optimizer thực sự cập nhật bước đi
+        if scale_before <= scaler.get_scale():
+            scheduler.step()
 
         total_loss += loss.detach().item()
 

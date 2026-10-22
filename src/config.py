@@ -4,44 +4,93 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 
-# Bảng presets dành cho các models phổ biến trong thi NLP / Hackathon
+# Bảng presets dành cho các models trong danh sách CHÍNH THỨC của RMIT Hackathon 2026
 MODEL_PRESETS = {
-    "distilbert": {
-        "model_name": "distilbert-base-multilingual-cased",
-        "kaggle_path": "/kaggle/input/models/aisuko/distilbert-base-multilingual-cased/transformers/default/1",
-        "lr": 2e-5,
-        "batch_size": 16,
-        "max_len": 256,
-    },
-    "xlm-roberta": {
-        "model_name": "xlm-roberta-base",
-        "kaggle_path": "/kaggle/input/xlm-roberta-base",
+    # 1. Nhóm Safety-Tuned (ĐÃ ĐƯỢC HUẤN LUYỆN CHUYÊN BIỆT VỀ PROMPT INJECTION) -> ƯU TIÊN SỐ 1
+    "protectai-deberta": {
+        "model_name": "protectai/deberta-v3-base-prompt-injection-v2",
+        "kaggle_paths": [
+            "/kaggle/input/models/aisuko/deberta-v3-base-prompt-injection-v2/transformers/default/1",
+            "/kaggle/input/deberta-v3-base-prompt-injection-v2",
+        ],
         "lr": 1.5e-5,
         "batch_size": 16,
-        "max_len": 256,
+        "max_len": 512,
     },
-    "mdeberta": {
-        "model_name": "microsoft/mdeberta-v3-base",
-        "kaggle_path": "/kaggle/input/mdeberta-v3-base",
+    "wolf-defender": {
+        "model_name": "patronus-studio/wolf-defender-prompt-injection",
+        "kaggle_paths": [
+            "/kaggle/input/models/aisuko/wolf-defender-prompt-injection/transformers/default/1",
+            "/kaggle/input/wolf-defender-prompt-injection",
+        ],
+        "lr": 1.5e-5,
+        "batch_size": 16,
+        "max_len": 512,
+    },
+
+    # 2. Nhóm Encoders Đa ngôn ngữ mạnh (Multilingual Encoders)
+    "xlm-roberta-large": {
+        "model_name": "FacebookAI/xlm-roberta-large",
+        "kaggle_paths": [
+            "/kaggle/input/models/aisuko/xlm-roberta-large/transformers/default/1",
+            "/kaggle/input/xlm-roberta-large",
+        ],
         "lr": 1e-5,
         "batch_size": 8,
-        "max_len": 256,
+        "max_len": 512,
     },
-    "phobert": {
-        "model_name": "vinai/phobert-base-v2",
-        "kaggle_path": "/kaggle/input/phobert-base-v2",
+    "xlm-roberta": {
+        "model_name": "FacebookAI/xlm-roberta-base",
+        "kaggle_paths": [
+            "/kaggle/input/models/aisuko/xlm-roberta-base/transformers/default/1",
+            "/kaggle/input/xlm-roberta-base",
+        ],
+        "lr": 1.5e-5,
+        "batch_size": 16,
+        "max_len": 512,
+    },
+    "rembert": {
+        "model_name": "google/rembert",
+        "kaggle_paths": [
+            "/kaggle/input/models/aisuko/rembert/transformers/default/1",
+            "/kaggle/input/rembert",
+        ],
+        "lr": 1e-5,
+        "batch_size": 8,
+        "max_len": 512,
+    },
+    "mmbert-base": {
+        "model_name": "jhu-clsp/mmBERT-base",
+        "kaggle_paths": [
+            "/kaggle/input/models/aisuko/mmbert-base/transformers/default/1",
+            "/kaggle/input/mmbert-base",
+        ],
         "lr": 2e-5,
         "batch_size": 16,
-        "max_len": 256,
+        "max_len": 512,
     },
-    "bert-multilingual": {
-        "model_name": "bert-base-multilingual-cased",
-        "kaggle_path": "/kaggle/input/bert-base-multilingual-cased",
+    "mmbert-small": {
+        "model_name": "jhu-clsp/mmBERT-small",
+        "kaggle_paths": [
+            "/kaggle/input/models/aisuko/mmbert-small/transformers/default/1",
+            "/kaggle/input/mmbert-small",
+        ],
         "lr": 2e-5,
-        "batch_size": 16,
+        "batch_size": 32,
+        "max_len": 512,
+    },
+    "distilbert": {
+        "model_name": "distilbert/distilbert-base-multilingual-cased",
+        "kaggle_paths": [
+            "/kaggle/input/models/aisuko/distilbert-base-multilingual-cased/transformers/default/1",
+            "/kaggle/input/distilbert-base-multilingual-cased",
+        ],
+        "lr": 2e-5,
+        "batch_size": 32,
         "max_len": 256,
     },
 }
+
 
 LABEL2ID = {
     "BENIGN": 0,
@@ -138,10 +187,13 @@ def get_config(
             p = MODEL_PRESETS[preset_key]
             base_params["exp_name"] = preset_key
             # Kiểm tra xem đường dẫn Kaggle offline có tồn tại không
-            if p.get("kaggle_path") and os.path.exists(p["kaggle_path"]):
-                base_params["model_name_or_path"] = p["kaggle_path"]
-            else:
-                base_params["model_name_or_path"] = p["model_name"]
+            kaggle_found = None
+            for kp in p.get("kaggle_paths", []):
+                if kp and os.path.exists(kp):
+                    kaggle_found = kp
+                    break
+            base_params["model_name_or_path"] = kaggle_found if kaggle_found else p["model_name"]
+
             base_params["lr"] = p["lr"]
             base_params["batch_size"] = p["batch_size"]
             base_params["max_len"] = p["max_len"]
