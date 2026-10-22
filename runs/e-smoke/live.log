@@ -1,0 +1,88 @@
+[{"stream_name":"stderr","time":5.550617871,"data":"/usr/local/lib/python3.13/dist-packages/nbformat/validator.py:434: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.\n"}
+,{"stream_name":"stderr","time":5.550660999,"data":"  _validate(nbdict, ref, version, version_minor, relax_add_props)\n"}
+,{"stream_name":"stderr","time":6.367730797,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.36777603,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.367781381,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.367785341,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":6.938017578,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.938045167,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.93804994,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.938053682,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":37.149655325,"data":"/kaggle/input/models/aisuko/mmbert-base/transformers/default/1 /kaggle/input/competitions/rmit-hackathon-2026 SMOKE\n"}
+,{"stream_name":"stdout","time":37.164997789,"data":"gpus 2 Tesla T4 | torch 2.11.0+cu128 | transformers 5.16.1\n"}
+,{"stream_name":"stdout","time":44.845221313,"data":"800 300 groups 796\n"}
+,{"stream_name":"stderr","time":62.373373703,"data":"[transformers] \u001b[1mModernBertForSequenceClassification LOAD REPORT\u001b[0m from: /kaggle/input/models/aisuko/mmbert-base/transformers/default/1\n"}
+,{"stream_name":"stderr","time":62.373408886,"data":"Key               | Status     | \n"}
+,{"stream_name":"stderr","time":62.373414848,"data":"------------------+------------+-\n"}
+,{"stream_name":"stderr","time":62.373419573,"data":"decoder.weight    | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":62.373424039,"data":"decoder.bias      | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":62.373428688,"data":"classifier.weight | MISSING    | \n"}
+,{"stream_name":"stderr","time":62.373433335,"data":"classifier.bias   | MISSING    | \n"}
+,{"stream_name":"stderr","time":62.37343813,"data":"\n"}
+,{"stream_name":"stderr","time":62.373442389,"data":"Notes:\n"}
+,{"stream_name":"stderr","time":62.373447217,"data":"- UNEXPECTED:\tcan be ignored when loading from different task/architecture; not ok if you expect identical arch.\n"}
+,{"stream_name":"stderr","time":62.373451984,"data":"- MISSING:\tthose params were newly initialized because missing from the checkpoint. Consider training on your downstream task.\n"}
+,{"stream_name":"stderr","time":62.373456931,"data":"\n"}
+,{"stream_name":"stderr","time":62.373461448,"data":"[transformers] \u001b[1mModernBertForSequenceClassification LOAD REPORT\u001b[0m from: /kaggle/input/models/aisuko/mmbert-base/transformers/default/1\n"}
+,{"stream_name":"stderr","time":62.373466503,"data":"Key               | Status     | \n"}
+,{"stream_name":"stderr","time":62.373470881,"data":"------------------+------------+-\n"}
+,{"stream_name":"stderr","time":62.373475831,"data":"decoder.weight    | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":62.37349145,"data":"decoder.bias      | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":62.373495745,"data":"classifier.weight | MISSING    | \n"}
+,{"stream_name":"stderr","time":62.373499399,"data":"classifier.bias   | MISSING    | \n"}
+,{"stream_name":"stderr","time":62.373503532,"data":"\n"}
+,{"stream_name":"stderr","time":62.373507182,"data":"Notes:\n"}
+,{"stream_name":"stderr","time":62.373510745,"data":"- UNEXPECTED:\tcan be ignored when loading from different task/architecture; not ok if you expect identical arch.\n"}
+,{"stream_name":"stderr","time":62.373514923,"data":"- MISSING:\tthose params were newly initialized because missing from the checkpoint. Consider training on your downstream task.\n"}
+,{"stream_name":"stdout","time":284.260695153,"data":"{'train_runtime': '33.34', 'train_samples_per_second': '11.97', 'train_steps_per_second': '0.39', 'train_loss': '1.939', 'epoch': '1'}\n"}
+,{"stream_name":"stdout","time":300.194854165,"data":"fold 0 macro F1 0.6786 | train_min 0.6 | fold_min 4.2\n"}
+,{"stream_name":"stderr","time":300.59286489,"data":"[transformers] \u001b[1mModernBertForSequenceClassification LOAD REPORT\u001b[0m from: /kaggle/input/models/aisuko/mmbert-base/transformers/default/1\n"}
+,{"stream_name":"stderr","time":300.59290608,"data":"Key               | Status     | \n"}
+,{"stream_name":"stderr","time":300.592910229,"data":"------------------+------------+-\n"}
+,{"stream_name":"stderr","time":300.592913267,"data":"decoder.weight    | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":300.592916056,"data":"decoder.bias      | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":300.592919064,"data":"classifier.weight | MISSING    | \n"}
+,{"stream_name":"stderr","time":300.592921745,"data":"classifier.bias   | MISSING    | \n"}
+,{"stream_name":"stderr","time":300.592924654,"data":"\n"}
+,{"stream_name":"stderr","time":300.592943755,"data":"Notes:\n"}
+,{"stream_name":"stderr","time":300.592948705,"data":"- UNEXPECTED:\tcan be ignored when loading from different task/architecture; not ok if you expect identical arch.\n"}
+,{"stream_name":"stderr","time":300.592953992,"data":"- MISSING:\tthose params were newly initialized because missing from the checkpoint. Consider training on your downstream task.\n"}
+,{"stream_name":"stderr","time":300.592959232,"data":"\n"}
+,{"stream_name":"stderr","time":300.592963689,"data":"[transformers] \u001b[1mModernBertForSequenceClassification LOAD REPORT\u001b[0m from: /kaggle/input/models/aisuko/mmbert-base/transformers/default/1\n"}
+,{"stream_name":"stderr","time":300.592968558,"data":"Key               | Status     | \n"}
+,{"stream_name":"stderr","time":300.592973147,"data":"------------------+------------+-\n"}
+,{"stream_name":"stderr","time":300.592977475,"data":"decoder.weight    | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":300.592982192,"data":"decoder.bias      | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":300.592986774,"data":"classifier.weight | MISSING    | \n"}
+,{"stream_name":"stderr","time":300.592991196,"data":"classifier.bias   | MISSING    | \n"}
+,{"stream_name":"stderr","time":300.592995372,"data":"\n"}
+,{"stream_name":"stderr","time":300.592999765,"data":"Notes:\n"}
+,{"stream_name":"stderr","time":300.593009144,"data":"- UNEXPECTED:\tcan be ignored when loading from different task/architecture; not ok if you expect identical arch.\n"}
+,{"stream_name":"stderr","time":300.593012483,"data":"- MISSING:\tthose params were newly initialized because missing from the checkpoint. Consider training on your downstream task.\n"}
+,{"stream_name":"stdout","time":335.410511537,"data":"{'train_runtime': '33.95', 'train_samples_per_second': '11.81', 'train_steps_per_second': '0.383', 'train_loss': '2.462', 'epoch': '1'}\n"}
+,{"stream_name":"stdout","time":352.679117425,"data":"fold 1 macro F1 0.6139 | train_min 0.6 | fold_min 0.9\n"}
+,{"stream_name":"stdout","time":353.058476585,"data":"OOF macro F1 raw 0.6443696762984122 | weights [1.   0.5  0.75] tuned 0.6586491810535635 | folds done 2 of 2\n"}
+,{"stream_name":"stdout","time":353.058498972,"data":"[[404  81  14]\n"}
+,{"stream_name":"stdout","time":353.058502037,"data":" [ 69 173   2]\n"}
+,{"stream_name":"stdout","time":353.058504201,"data":" [ 32   2  23]]\n"}
+,{"stream_name":"stdout","time":353.058506352,"data":"length 0-400 442 0.6926\n"}
+,{"stream_name":"stdout","time":353.058509079,"data":"length 400-800 179 0.4322\n"}
+,{"stream_name":"stdout","time":353.058525886,"data":"length 800+ 179 0.4845\n"}
+,{"stream_name":"stdout","time":353.058529776,"data":"language en 83 0.4653\n"}
+,{"stream_name":"stdout","time":353.058533553,"data":"language fr 189 0.694\n"}
+,{"stream_name":"stdout","time":353.058537181,"data":"language it 169 0.775\n"}
+,{"stream_name":"stdout","time":353.058541389,"data":"language pt 359 0.6373\n"}
+,{"stream_name":"stdout","time":353.079775038,"data":"label\n"}
+,{"stream_name":"stdout","time":353.07979456,"data":"BENIGN              0.663333\n"}
+,{"stream_name":"stdout","time":353.079798799,"data":"JAILBREAK           0.310000\n"}
+,{"stream_name":"stdout","time":353.07980225,"data":"PROMPT_INJECTION    0.026667\n"}
+,{"stream_name":"stdout","time":353.079805625,"data":"Name: proportion, dtype: float64\n"}
+,{"stream_name":"stderr","time":358.719905702,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":358.719932499,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":358.874950329,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":358.874975428,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":360.282534811,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":360.359980613,"data":"[NbConvertApp] Writing 39720 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":363.434434651,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":363.959911228,"data":"[NbConvertApp] Writing 345174 bytes to __results__.html\n"}
+]

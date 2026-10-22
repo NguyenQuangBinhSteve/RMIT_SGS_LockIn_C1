@@ -1,0 +1,118 @@
+[{"stream_name":"stderr","time":5.76712454,"data":"/usr/local/lib/python3.13/dist-packages/nbformat/validator.py:434: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.\n"}
+,{"stream_name":"stderr","time":5.76721458,"data":"  _validate(nbdict, ref, version, version_minor, relax_add_props)\n"}
+,{"stream_name":"stderr","time":6.59463518,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.59466861,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.594673994,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.594678367,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":7.194664252,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":7.194693984,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":7.194698764,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":7.194704451,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":36.747001182,"data":"/kaggle/input/models/aisuko/xlm-roberta-large/transformers/default/1 /kaggle/input/competitions/rmit-hackathon-2026 SMOKE\n"}
+,{"stream_name":"stdout","time":36.764579725,"data":"gpus 2 Tesla T4 | torch 2.11.0+cu128 | transformers 5.16.1\n"}
+,{"stream_name":"stderr","time":39.862796626,"data":"[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (796 \u003e 512). Running this sequence through the model will result in indexing errors\n"}
+,{"stream_name":"stderr","time":39.862826548,"data":"\n"}
+,{"stream_name":"stderr","time":39.862830701,"data":"[transformers] Token indices sequence length is longer than the specified maximum sequence length for this model (796 \u003e 512). Running this sequence through the model will result in indexing errors\n"}
+,{"stream_name":"stdout","time":39.956000346,"data":"800 300 groups 796\n"}
+,{"stream_name":"stderr","time":41.098709853,"data":"[transformers] \u001b[1mXLMRobertaForSequenceClassification LOAD REPORT\u001b[0m from: /kaggle/input/models/aisuko/xlm-roberta-large/transformers/default/1\n"}
+,{"stream_name":"stderr","time":41.098744899,"data":"Key                         | Status     | \n"}
+,{"stream_name":"stderr","time":41.098751258,"data":"----------------------------+------------+-\n"}
+,{"stream_name":"stderr","time":41.098756757,"data":"lm_head.dense.weight        | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098762025,"data":"roberta.pooler.dense.weight | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098767104,"data":"roberta.pooler.dense.bias   | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098772265,"data":"lm_head.dense.bias          | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098777429,"data":"lm_head.layer_norm.bias     | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.09878259,"data":"lm_head.layer_norm.weight   | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098787552,"data":"lm_head.bias                | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098792702,"data":"classifier.out_proj.bias    | MISSING    | \n"}
+,{"stream_name":"stderr","time":41.098829437,"data":"classifier.out_proj.weight  | MISSING    | \n"}
+,{"stream_name":"stderr","time":41.09883442,"data":"classifier.dense.weight     | MISSING    | \n"}
+,{"stream_name":"stderr","time":41.098837889,"data":"classifier.dense.bias       | MISSING    | \n"}
+,{"stream_name":"stderr","time":41.098841782,"data":"\n"}
+,{"stream_name":"stderr","time":41.098845893,"data":"Notes:\n"}
+,{"stream_name":"stderr","time":41.09885028,"data":"- UNEXPECTED:\tcan be ignored when loading from different task/architecture; not ok if you expect identical arch.\n"}
+,{"stream_name":"stderr","time":41.098855014,"data":"- MISSING:\tthose params were newly initialized because missing from the checkpoint. Consider training on your downstream task.\n"}
+,{"stream_name":"stderr","time":41.09885975,"data":"\n"}
+,{"stream_name":"stderr","time":41.098864005,"data":"[transformers] \u001b[1mXLMRobertaForSequenceClassification LOAD REPORT\u001b[0m from: /kaggle/input/models/aisuko/xlm-roberta-large/transformers/default/1\n"}
+,{"stream_name":"stderr","time":41.098868641,"data":"Key                         | Status     | \n"}
+,{"stream_name":"stderr","time":41.098872632,"data":"----------------------------+------------+-\n"}
+,{"stream_name":"stderr","time":41.098876832,"data":"lm_head.dense.weight        | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098880985,"data":"roberta.pooler.dense.weight | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098885217,"data":"roberta.pooler.dense.bias   | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098889767,"data":"lm_head.dense.bias          | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098894686,"data":"lm_head.layer_norm.bias     | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098899819,"data":"lm_head.layer_norm.weight   | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098904465,"data":"lm_head.bias                | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":41.098909056,"data":"classifier.out_proj.bias    | MISSING    | \n"}
+,{"stream_name":"stderr","time":41.098913752,"data":"classifier.out_proj.weight  | MISSING    | \n"}
+,{"stream_name":"stderr","time":41.098917818,"data":"classifier.dense.weight     | MISSING    | \n"}
+,{"stream_name":"stderr","time":41.098921988,"data":"classifier.dense.bias       | MISSING    | \n"}
+,{"stream_name":"stderr","time":41.098926009,"data":"\n"}
+,{"stream_name":"stderr","time":41.098930527,"data":"Notes:\n"}
+,{"stream_name":"stderr","time":41.098935415,"data":"- UNEXPECTED:\tcan be ignored when loading from different task/architecture; not ok if you expect identical arch.\n"}
+,{"stream_name":"stderr","time":41.098940425,"data":"- MISSING:\tthose params were newly initialized because missing from the checkpoint. Consider training on your downstream task.\n"}
+,{"stream_name":"stdout","time":129.591623341,"data":"{'train_runtime': '72.09', 'train_samples_per_second': '5.535', 'train_steps_per_second': '0.18', 'train_loss': '2.085', 'epoch': '1'}\n"}
+,{"stream_name":"stdout","time":162.893813794,"data":"fold 0 macro F1 0.3387 | train_min 1.2 | fold_min 2.0\n"}
+,{"stream_name":"stderr","time":163.890827112,"data":"[transformers] \u001b[1mXLMRobertaForSequenceClassification LOAD REPORT\u001b[0m from: /kaggle/input/models/aisuko/xlm-roberta-large/transformers/default/1\n"}
+,{"stream_name":"stderr","time":163.890862179,"data":"Key                         | Status     | \n"}
+,{"stream_name":"stderr","time":163.8908678,"data":"----------------------------+------------+-\n"}
+,{"stream_name":"stderr","time":163.89087209,"data":"lm_head.dense.weight        | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890892145,"data":"roberta.pooler.dense.weight | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.89089478,"data":"roberta.pooler.dense.bias   | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890896916,"data":"lm_head.dense.bias          | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890899165,"data":"lm_head.layer_norm.bias     | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890901365,"data":"lm_head.layer_norm.weight   | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890903465,"data":"lm_head.bias                | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890905565,"data":"classifier.out_proj.bias    | MISSING    | \n"}
+,{"stream_name":"stderr","time":163.890907746,"data":"classifier.out_proj.weight  | MISSING    | \n"}
+,{"stream_name":"stderr","time":163.890909897,"data":"classifier.dense.weight     | MISSING    | \n"}
+,{"stream_name":"stderr","time":163.890912107,"data":"classifier.dense.bias       | MISSING    | \n"}
+,{"stream_name":"stderr","time":163.890914234,"data":"\n"}
+,{"stream_name":"stderr","time":163.890916634,"data":"Notes:\n"}
+,{"stream_name":"stderr","time":163.890918822,"data":"- UNEXPECTED:\tcan be ignored when loading from different task/architecture; not ok if you expect identical arch.\n"}
+,{"stream_name":"stderr","time":163.890921164,"data":"- MISSING:\tthose params were newly initialized because missing from the checkpoint. Consider training on your downstream task.\n"}
+,{"stream_name":"stderr","time":163.890923554,"data":"\n"}
+,{"stream_name":"stderr","time":163.890925632,"data":"[transformers] \u001b[1mXLMRobertaForSequenceClassification LOAD REPORT\u001b[0m from: /kaggle/input/models/aisuko/xlm-roberta-large/transformers/default/1\n"}
+,{"stream_name":"stderr","time":163.890928021,"data":"Key                         | Status     | \n"}
+,{"stream_name":"stderr","time":163.890930159,"data":"----------------------------+------------+-\n"}
+,{"stream_name":"stderr","time":163.890932266,"data":"lm_head.dense.weight        | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890934376,"data":"roberta.pooler.dense.weight | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890936489,"data":"roberta.pooler.dense.bias   | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.8909386,"data":"lm_head.dense.bias          | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890940702,"data":"lm_head.layer_norm.bias     | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890942797,"data":"lm_head.layer_norm.weight   | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890952377,"data":"lm_head.bias                | UNEXPECTED | \n"}
+,{"stream_name":"stderr","time":163.890954951,"data":"classifier.out_proj.bias    | MISSING    | \n"}
+,{"stream_name":"stderr","time":163.89095707,"data":"classifier.out_proj.weight  | MISSING    | \n"}
+,{"stream_name":"stderr","time":163.890959178,"data":"classifier.dense.weight     | MISSING    | \n"}
+,{"stream_name":"stderr","time":163.890961362,"data":"classifier.dense.bias       | MISSING    | \n"}
+,{"stream_name":"stderr","time":163.890963466,"data":"\n"}
+,{"stream_name":"stderr","time":163.890965493,"data":"Notes:\n"}
+,{"stream_name":"stderr","time":163.890967577,"data":"- UNEXPECTED:\tcan be ignored when loading from different task/architecture; not ok if you expect identical arch.\n"}
+,{"stream_name":"stderr","time":163.890969887,"data":"- MISSING:\tthose params were newly initialized because missing from the checkpoint. Consider training on your downstream task.\n"}
+,{"stream_name":"stdout","time":239.895043985,"data":"{'train_runtime': '74.87', 'train_samples_per_second': '5.356', 'train_steps_per_second': '0.174', 'train_loss': '2.037', 'epoch': '1'}\n"}
+,{"stream_name":"stdout","time":272.650654377,"data":"fold 1 macro F1 0.4240 | train_min 1.3 | fold_min 1.8\n"}
+,{"stream_name":"stdout","time":273.5032251,"data":"OOF macro F1 raw 0.3958618498532071 | weights [1.  1.  1.5] tuned 0.46972763849467697 | folds done 2 of 2\n"}
+,{"stream_name":"stdout","time":273.503266144,"data":"[[314 168  17]\n"}
+,{"stream_name":"stdout","time":273.503273848,"data":" [ 99 145   0]\n"}
+,{"stream_name":"stdout","time":273.503279609,"data":" [ 25  22  10]]\n"}
+,{"stream_name":"stdout","time":273.503285401,"data":"length 0-400 442 0.5063\n"}
+,{"stream_name":"stdout","time":273.503290801,"data":"length 400-800 179 0.315\n"}
+,{"stream_name":"stdout","time":273.503296111,"data":"length 800+ 179 0.3446\n"}
+,{"stream_name":"stdout","time":273.503301025,"data":"language en 83 0.4249\n"}
+,{"stream_name":"stdout","time":273.5033059,"data":"language fr 189 0.4576\n"}
+,{"stream_name":"stdout","time":273.503316862,"data":"language it 169 0.4334\n"}
+,{"stream_name":"stdout","time":273.50332086,"data":"language pt 359 0.504\n"}
+,{"stream_name":"stdout","time":273.524585401,"data":"label\n"}
+,{"stream_name":"stdout","time":273.524608362,"data":"JAILBREAK    0.586667\n"}
+,{"stream_name":"stdout","time":273.524618143,"data":"BENIGN       0.413333\n"}
+,{"stream_name":"stdout","time":273.524621129,"data":"Name: proportion, dtype: float64\n"}
+,{"stream_name":"stderr","time":278.949915366,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":278.949949688,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":279.11319393,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":279.113231816,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":279.933992498,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":280.014978911,"data":"[NbConvertApp] Writing 40901 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":282.595639192,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":283.122226129,"data":"[NbConvertApp] Writing 346273 bytes to __results__.html\n"}
+]

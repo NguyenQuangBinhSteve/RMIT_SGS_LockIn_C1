@@ -1,0 +1,32 @@
+{
+ "model": "jhu-clsp/mmBERT-base",
+ "mirror": "aisuko/mmbert-base",
+ "K": 2,
+ "folds_done": 2,
+ "stopped_early": false,
+ "epochs": 1,
+ "lr": 3e-05,
+ "head": 384,
+ "tail": 126,
+ "oof_raw": 0.6443696762984122,
+ "oof_tuned": 0.6586491810535635,
+ "weights": [
+  1.0,
+  0.5,
+  0.75
+ ],
+ "fold_f1": [
+  0.6785632854294463,
+  0.6138526389066687
+ ],
+ "fold_min": [
+  4.249161008993784,
+  0.8662928064664205
+ ],
+ "total_min": 5.272044078509013,
+ "test_pred_dist": {
+  "BENIGN": 199,
+  "JAILBREAK": 93,
+  "PROMPT_INJECTION": 8
+ }
+}

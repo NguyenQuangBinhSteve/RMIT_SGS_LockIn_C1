@@ -1,0 +1,4 @@
+14000 rows 13569 groups
+StratifiedGroupKFold OOF macro F1 0.9168 | 1.4 min
+StratifiedKFold OOF macro F1 0.9165 | 1.1 min
+EXIT 0 151s

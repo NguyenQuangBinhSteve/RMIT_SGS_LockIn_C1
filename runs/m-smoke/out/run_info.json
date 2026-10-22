@@ -1,0 +1,31 @@
+{
+ "model": "FacebookAI/xlm-roberta-large",
+ "mirror": "aisuko/xlm-roberta-large",
+ "K": 2,
+ "folds_done": 2,
+ "stopped_early": false,
+ "epochs": 1,
+ "lr": 1e-05,
+ "head": 384,
+ "tail": 126,
+ "oof_raw": 0.3958618498532071,
+ "oof_tuned": 0.46972763849467697,
+ "weights": [
+  1.0,
+  1.0,
+  1.5
+ ],
+ "fold_f1": [
+  0.33865144418423104,
+  0.4239832569715482
+ ],
+ "fold_min": [
+  2.04611835082372,
+  1.8170814633369445
+ ],
+ "total_min": 3.951397391160329,
+ "test_pred_dist": {
+  "JAILBREAK": 176,
+  "BENIGN": 124
+ }
+}

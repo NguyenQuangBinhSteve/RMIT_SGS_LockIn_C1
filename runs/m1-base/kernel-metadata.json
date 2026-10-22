@@ -1,0 +1,18 @@
+{
+  "id": "qucanhtrnnguyn/rmit-sgs-lock-in-c1",
+  "title": "RMIT_SGS_Lock-In_C1",
+  "code_file": "RMIT_SGS_Lock-In_C1.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": false,
+  "dataset_sources": [],
+  "kernel_sources": [],
+  "competition_sources": [
+    "rmit-hackathon-2026"
+  ],
+  "model_sources": [
+    "aisuko/xlm-roberta-base/transformers/default/1"
+  ]
+}
