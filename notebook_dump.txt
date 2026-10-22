@@ -1,0 +1,160 @@
+Total cells: 6
+
+============================================================
+Cell 0 [markdown]
+============================================================
+# RMIT_SGS_Lock-In_C1
+**Model: FacebookAI/xlm-roberta-base (mirror aisuko/xlm-roberta-base)**
+
+K=3, epochs=3, LR=2e-05
+
+Fine-tune một model được phép cho phân loại 3 lớp BENIGN / JAILBREAK / PROMPT_INJECTION.
+Setup: Add Input -> competition `rmit-hackathon-2026` + Models -> `aisuko/xlm-roberta-base`. Accelerator: GPU T4 x2, Internet off.
+Quy trình: StratifiedGroupKFold theo prefix 60 ký tự, OOF macro F1, test = trung bình xác suất các fold đã xong.
+
+============================================================
+Cell 1 [code]
+============================================================
+import gc, glob, inspect, json, math, os, time
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+import numpy as np, pandas as pd, torch, transformers
+from datasets import Dataset
+from sklearn.metrics import confusion_matrix, f1_score
+from sklearn.model_selection import StratifiedGroupKFold
+from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
+                          DataCollatorWithPadding, Trainer, TrainingArguments)
+
+T0 = time.time()
+HF_NAME, MIRROR, K, EPOCHS, LR, HEAD, TAIL, TIME_BUDGET_MIN, SMOKE, GC, FP16 = ('FacebookAI/xlm-roberta-base', 'aisuko/xlm-roberta-base', 3, 3, 2e-05, 384, 126, 100, False, False, True)
+SEED = 42
+LABELS = ['BENIGN', 'JAILBREAK', 'PROMPT_INJECTION']
+
+# Tìm thư mục model duy nhất có config.json và file trọng số, bỏ qua onnx và .cache.
+def find_model(root='/kaggle/input'):
+    found = {os.path.dirname(p) for p in glob.glob(f'{root}/**/config.json', recursive=True)
+             if '/onnx' not in p and '/.cache' not in p}
+    found = [d for d in found if os.path.exists(f'{d}/model.safetensors') or os.path.exists(f'{d}/pytorch_model.bin')]
+    assert len(found) == 1, found
+    return found[0]
+
+MODEL = find_model()
+DATA = glob.glob('/kaggle/input/**/train.csv', recursive=True)[0].rsplit('/', 1)[0]
+print(MODEL, DATA, 'SMOKE' if SMOKE else 'FULL')
+print('gpus', torch.cuda.device_count(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+      '| torch', torch.__version__, '| transformers', transformers.__version__)
+
+============================================================
+Cell 2 [code]
+============================================================
+train = pd.read_csv(f'{DATA}/train.csv', keep_default_na=False)
+test = pd.read_csv(f'{DATA}/test.csv', keep_default_na=False)
+if SMOKE:
+    train, test, K, EPOCHS = train.sample(800, random_state=SEED).reset_index(drop=True), test.head(300), 2, 1
+train['y'] = train.label.map(LABELS.index)
+group = train.text.str.lower().str.replace(r'\W+', ' ', regex=True).str.strip().str[:60]
+tok = AutoTokenizer.from_pretrained(MODEL)
+
+# Chuyển danh sách text thành input_ids có token đặc biệt, giữ phần đầu và phần cuối khi quá dài.
+def encode(texts):
+    ids = tok(list(texts))['input_ids']
+    return [x if len(x) <= HEAD + TAIL + 2 else x[:HEAD + 1] + x[-(TAIL + 1):] for x in ids]
+
+# Gói input_ids (và nhãn nếu có) thành Dataset.
+def to_ds(texts, y=None):
+    d = {'input_ids': encode(texts)}
+    if y is not None:
+        d['labels'] = list(y)
+    return Dataset.from_dict(d)
+
+ds_all, ds_te = to_ds(train.text, train.y), to_ds(test.text)
+print(len(train), len(test), 'groups', group.nunique())
+
+============================================================
+Cell 3 [code]
+============================================================
+freq = np.bincount(train.y, minlength=3) / len(train)
+class_w = torch.tensor((1 / freq) ** 0.5, dtype=torch.float)
+class_w /= class_w.mean()
+
+# Trainer dùng cross-entropy có trọng số lớp để bù lớp PROMPT_INJECTION hiếm.
+class WeightedTrainer(Trainer):
+    def compute_loss(self, model, inputs, return_outputs=False, **kw):
+        out = model(**{k: v for k, v in inputs.items() if k != 'labels'})
+        logits = out.logits.float()
+        loss = torch.nn.functional.cross_entropy(logits, inputs['labels'], weight=class_w.to(logits.device))
+        return (loss, out) if return_outputs else loss
+
+# Softmax theo hàng.
+def softmax(x):
+    e = np.exp(x - x.max(1, keepdims=True))
+    return e / e.sum(1, keepdims=True)
+
+# Cho phép chạy fold kế tiếp nếu thời gian đã dùng cộng thời gian fold trung bình (phút) chưa vượt ngân sách.
+def can_continue(elapsed, fold_mins, budget):
+    return elapsed + sum(fold_mins) / len(fold_mins) <= budget
+
+oof, pte, mask = np.zeros((len(train), 3)), np.zeros((len(test), 3)), np.zeros(len(train), bool)
+fold_f1, fold_min = [], []
+ta_params = inspect.signature(TrainingArguments).parameters
+folds = StratifiedGroupKFold(n_splits=K, shuffle=True, random_state=SEED).split(train, train.y, group)
+for f, (ti, vi) in enumerate(folds):
+    t_fold = time.time()
+    model = AutoModelForSequenceClassification.from_pretrained(MODEL, num_labels=3)
+    steps = math.ceil(len(ti) / (8 * 2 * max(1, torch.cuda.device_count()))) * EPOCHS
+    kw = dict(
+        output_dir='/tmp/out', num_train_epochs=EPOCHS, learning_rate=LR, warmup_steps=int(0.1 * steps), weight_decay=0.01,
+        per_device_train_batch_size=8, gradient_accumulation_steps=2, per_device_eval_batch_size=32,
+        gradient_checkpointing=GC, gradient_checkpointing_kwargs={'use_reentrant': False},
+        fp16=FP16, group_by_length=True, seed=SEED, save_strategy='no', report_to='none', logging_steps=50, disable_tqdm=True)
+    args = TrainingArguments(**{k: v for k, v in kw.items() if k in ta_params})
+    trainer = WeightedTrainer(model=model, args=args, train_dataset=ds_all.select(ti),
+                              processing_class=tok, data_collator=DataCollatorWithPadding(tok))
+    t_train = time.time()
+    trainer.train()
+    train_min = (time.time() - t_train) / 60
+    oof[vi] = softmax(trainer.predict(ds_all.select(vi)).predictions)
+    pte += softmax(trainer.predict(ds_te).predictions)
+    mask[vi] = True
+    fold_f1.append(f1_score(train.y[vi], oof[vi].argmax(1), average='macro'))
+    fold_min.append((time.time() - t_fold) / 60)
+    print(f'fold {f} macro F1 {fold_f1[-1]:.4f} | train_min {train_min:.1f} | fold_min {fold_min[-1]:.1f}', flush=True)
+    del trainer, model
+    gc.collect()
+    torch.cuda.empty_cache()
+    if f + 1 < K and not can_continue((time.time() - T0) / 60, fold_min, TIME_BUDGET_MIN):
+        print(f'STOP EARLY after fold {f}', flush=True)
+        break
+pte /= len(fold_min)
+np.save('oof.npy', oof)
+np.save('test_probs.npy', pte)
+
+============================================================
+Cell 4 [code]
+============================================================
+yv, ov = train.y.values[mask], oof[mask]
+grid = np.arange(0.5, 2.01, 0.25)
+best = max(((a, b) for a in grid for b in grid), key=lambda w: f1_score(yv, (ov * [1, *w]).argmax(1), average='macro'))
+w = np.array([1, *best])
+pred = (ov * w).argmax(1)
+oof_raw, oof_tuned = f1_score(yv, ov.argmax(1), average='macro'), f1_score(yv, pred, average='macro')
+print('OOF macro F1 raw', oof_raw, '| weights', w, 'tuned', oof_tuned, '| folds done', len(fold_min), 'of', K)
+print(confusion_matrix(yv, pred))
+dv = train[mask].assign(p=pred)
+bucket = pd.cut(dv.text.str.len(), [-1, 400, 800, 10**9], labels=['0-400', '400-800', '800+'])
+for name, key in [('length', bucket), ('language', dv.language)]:
+    for k, d in dv.groupby(key, observed=True):
+        print(name, k, len(d), round(f1_score(d.y, d.p, average='macro'), 4))
+
+============================================================
+Cell 5 [code]
+============================================================
+sub = pd.DataFrame({'id': test.id, 'label': [LABELS[i] for i in (pte * w).argmax(1)]})
+sub.to_csv('submission.csv', index=False)
+if not SMOKE:
+    ref = pd.read_csv(f'{DATA}/sample_submission.csv')
+    assert len(sub) == 6000 and set(sub.id) == set(ref.id) and set(sub.label) <= set(LABELS)
+print(sub.label.value_counts(normalize=True))
+json.dump(dict(model=HF_NAME, mirror=MIRROR, K=K, folds_done=len(fold_min), stopped_early=len(fold_min) < K,
+               epochs=EPOCHS, lr=LR, gc=GC, fp16=FP16, head=HEAD, tail=TAIL, oof_raw=oof_raw, oof_tuned=oof_tuned, weights=w.tolist(),
+               fold_f1=fold_f1, fold_min=fold_min, total_min=(time.time() - T0) / 60,
+               test_pred_dist=sub.label.value_counts().to_dict()), open('run_info.json', 'w'), indent=1)

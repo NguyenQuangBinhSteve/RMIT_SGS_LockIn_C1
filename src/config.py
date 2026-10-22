@@ -82,13 +82,16 @@ class Config:
     output_dir: str = ""
     seed: int = 42
     n_folds: int = 5
-    epochs: int = 3
+    epochs: int = 6
     batch_size: int = 16
     max_len: int = 256
     lr: float = 2e-5
     weight_decay: float = 0.01
     warmup_ratio: float = 0.1
     num_workers: int = 0
+    use_fgm: bool = True
+    fgm_epsilon: float = 1.0
+    adv_start_epoch: int = 3
     _device: Optional[Any] = None
 
     def __post_init__(self):
@@ -180,12 +183,15 @@ def parse_args() -> Config:
     )
     parser.add_argument("--batch_size", "-b", type=int, default=None, help="Batch size")
     parser.add_argument("--lr", type=float, default=None, help="Learning rate")
-    parser.add_argument("--epochs", "-e", type=int, default=None, help="Số epochs")
+    parser.add_argument("--epochs", "-e", type=int, default=None, help="Số epochs (mặc định: 6)")
     parser.add_argument("--max_len", type=int, default=None, help="Max sequence length")
     parser.add_argument("--n_folds", type=int, default=None, help="Số folds")
     parser.add_argument("--seed", type=int, default=None, help="Random seed")
     parser.add_argument("--data_dir", type=str, default=None, help="Đường dẫn thư mục data")
     parser.add_argument("--output_dir", type=str, default=None, help="Đường dẫn thư mục output")
+    parser.add_argument("--no_fgm", action="store_true", help="Tắt học đối kháng FGM")
+    parser.add_argument("--fgm_epsilon", type=float, default=None, help="Hệ số nhiễu FGM epsilon (mặc định: 1.0)")
+    parser.add_argument("--adv_start_epoch", type=int, default=None, help="Epoch bắt đầu Phase 2 FGM (mặc định: 3)")
 
     args, _ = parser.parse_known_args()
 
@@ -193,6 +199,8 @@ def parse_args() -> Config:
     preset = args.preset
     if not preset and not args.model:
         preset = "distilbert"
+
+    use_fgm = False if args.no_fgm else True
 
     return get_config(
         preset=preset,
@@ -206,7 +214,11 @@ def parse_args() -> Config:
         seed=args.seed,
         data_dir=args.data_dir,
         output_dir=args.output_dir,
+        use_fgm=use_fgm,
+        fgm_epsilon=args.fgm_epsilon,
+        adv_start_epoch=args.adv_start_epoch,
     )
+
 
 
 # CFG mặc định tương thích ngược cho các file import trực tiếp

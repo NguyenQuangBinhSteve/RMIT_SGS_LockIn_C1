@@ -36,10 +36,11 @@ def main(cfg: Config = None):
     print(f"EXPERIMENT  : {cfg.EXP_NAME}")
     print(f"MODEL PATH  : {cfg.MODEL_DIR}")
     print(f"BATCH SIZE  : {cfg.BATCH_SIZE}")
-    print(f"LEARNING RT : {cfg.LR}")
     print(f"EPOCHS      : {cfg.EPOCHS}")
+    print(f"USE FGM     : {cfg.USE_FGM} (Phase 2 starts at Epoch {cfg.ADV_START_EPOCH})")
     print(f"OUTPUT DIR  : {cfg.OUTPUT_DIR}")
     print(f"{'=' * 60}\n", flush=True)
+
 
     # 1. Load và kiểm định dữ liệu
     log_memory("Before CSV")

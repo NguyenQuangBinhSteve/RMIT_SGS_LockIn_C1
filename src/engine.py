@@ -5,16 +5,38 @@ import torch
 import torch.nn as nn
 from sklearn.metrics import accuracy_score, f1_score
 from torch.utils.data import DataLoader, Subset
-from transformers import (
-    AutoModelForSequenceClassification,
-    get_cosine_schedule_with_warmup,
-)
+from transformers import get_cosine_schedule_with_warmup
 
-from src.config import ID2LABEL, LABEL2ID
+from src.models import MultiSampleClassifier
 from src.utils import log_memory
 
 
-def train_epoch(model, loader, optimizer, scheduler, criterion, scaler, device):
+class FGM:
+    """Fast Gradient Method (FGM) áp dụng nhiễu đối kháng lên tầng Embeddings."""
+    def __init__(self, model, emb_name="word_embeddings", epsilon=1.0):
+        self.model = model
+        self.emb_name = emb_name
+        self.epsilon = epsilon
+        self.backup = {}
+
+    def attack(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad and self.emb_name in name:
+                self.backup[name] = param.data.clone()
+                norm = torch.norm(param.grad)
+                if norm != 0 and not torch.isnan(norm):
+                    r_at = self.epsilon * param.grad / norm
+                    param.data.add_(r_at)
+
+    def restore(self):
+        for name, param in self.model.named_parameters():
+            if param.requires_grad and self.emb_name in name:
+                if name in self.backup:
+                    param.data = self.backup[name]
+        self.backup = {}
+
+
+def train_epoch(model, loader, optimizer, scheduler, criterion, scaler, device, fgm=None):
     model.train()
     total_loss = 0.0
 
@@ -25,6 +47,7 @@ def train_epoch(model, loader, optimizer, scheduler, criterion, scaler, device):
 
         optimizer.zero_grad(set_to_none=True)
 
+        # 1. Forward và backward chuẩn (Phase 1)
         with torch.amp.autocast(
             device_type="cuda",
             dtype=torch.float16,
@@ -39,6 +62,25 @@ def train_epoch(model, loader, optimizer, scheduler, criterion, scaler, device):
             loss = criterion(logits, labels)
 
         scaler.scale(loss).backward()
+
+        # 2. Học đối kháng FGM (Phase 2)
+        if fgm is not None:
+            fgm.attack()
+            with torch.amp.autocast(
+                device_type="cuda",
+                dtype=torch.float16,
+                enabled=(device.type == "cuda"),
+            ):
+                outputs_adv = model(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    return_dict=False,
+                )
+                loss_adv = criterion(outputs_adv[0], labels)
+
+            scaler.scale(loss_adv).backward()
+            fgm.restore()
+
         scaler.step(optimizer)
         scaler.update()
         scheduler.step()
@@ -86,16 +128,14 @@ def train_one_fold(
     cfg,
     y_val_true: np.ndarray,
 ):
-    """Huấn luyện và đánh giá trên 1 fold, trả về best_val_probs và fold_test_probs."""
+    """Huấn luyện và đánh giá trên 1 fold với MultiSample Dropout và 2-Phase FGM Curriculum."""
     print(f"\n{'=' * 20} FOLD {fold + 1}/{cfg.N_FOLDS} {'=' * 20}", flush=True)
     log_memory(f"Fold {fold + 1}: before model load")
 
-    # Khởi tạo model
-    base_model = AutoModelForSequenceClassification.from_pretrained(
-        cfg.MODEL_DIR,
-        num_labels=3,
-        id2label=ID2LABEL,
-        label2id=LABEL2ID,
+    # Khởi tạo model với Custom Multi-Sample Dropout & Mean Pooling Head
+    base_model = MultiSampleClassifier(
+        model_name_or_path=cfg.MODEL_DIR,
+        num_classes=3,
     )
     base_model.to(cfg.DEVICE)
 
@@ -147,10 +187,20 @@ def train_one_fold(
     best_val_probs = None
     checkpoint = os.path.join(cfg.OUTPUT_DIR, f"{cfg.EXP_NAME}_fold_{fold}.pt")
 
+    # Khởi tạo bộ tấn công đối kháng FGM
+    fgm = FGM(model, epsilon=getattr(cfg, "FGM_EPSILON", 1.0)) if getattr(cfg, "USE_FGM", True) else None
+    adv_start = getattr(cfg, "ADV_START_EPOCH", 3)
+
     for epoch in range(cfg.EPOCHS):
+        # Chiến thuật 2 Phase:
+        # Phase 1: Train chuẩn để model nhanh chóng hội tụ
+        # Phase 2: Kích hoạt FGM để làm phẳng loss landscape và tăng độ lì
+        current_fgm = fgm if (fgm is not None and (epoch + 1) >= adv_start) else None
+        phase_str = "Phase 2: FGM Adv" if current_fgm is not None else "Phase 1: Standard"
+
         loss = train_epoch(
             model, train_loader, optimizer,
-            scheduler, criterion, scaler, cfg.DEVICE,
+            scheduler, criterion, scaler, cfg.DEVICE, fgm=current_fgm
         )
         probs = eval_model(model, val_loader, cfg.DEVICE)
         preds = probs.argmax(axis=1)
@@ -161,7 +211,7 @@ def train_one_fold(
         acc = accuracy_score(y_val_true, preds)
 
         print(
-            f"Epoch {epoch + 1}/{cfg.EPOCHS} | "
+            f"Epoch {epoch + 1}/{cfg.EPOCHS} [{phase_str}] | "
             f"Loss={loss:.4f} | Acc={acc:.4f} | "
             f"Macro F1={macro_f1:.4f}",
             flush=True,
@@ -210,4 +260,3 @@ def train_one_fold(
     log_memory(f"Fold {fold + 1}: cleanup complete")
 
     return best_val_probs, fold_test_probs
-
