@@ -145,7 +145,7 @@ def train_one_fold(
 
     best_score = -1.0
     best_val_probs = None
-    checkpoint = os.path.join(cfg.OUTPUT_DIR, f"distilbert_fold_{fold}.pt")
+    checkpoint = os.path.join(cfg.OUTPUT_DIR, f"{cfg.EXP_NAME}_fold_{fold}.pt")
 
     for epoch in range(cfg.EPOCHS):
         loss = train_epoch(

@@ -90,14 +90,15 @@ def summarize_oof(y_true, oof_probs: np.ndarray, id2label: dict) -> float:
 
 def save_results(
     output_dir: str,
+    exp_name: str,
     oof_probs: np.ndarray,
     test_probs: np.ndarray,
     test_df: pd.DataFrame,
     id2label: dict,
 ):
-    """Lưu OOF, test probabilities và file submission csv."""
-    oof_save_path = os.path.join(output_dir, "distilbert_oof.npy")
-    test_save_path = os.path.join(output_dir, "distilbert_test.npy")
+    """Lưu OOF, test probabilities và file submission csv theo exp_name linh hoạt."""
+    oof_save_path = os.path.join(output_dir, f"{exp_name}_oof.npy")
+    test_save_path = os.path.join(output_dir, f"{exp_name}_test.npy")
     np.save(oof_save_path, oof_probs)
     np.save(test_save_path, test_probs)
 
@@ -107,7 +108,7 @@ def save_results(
         "label": [id2label[int(p)] for p in final_preds],
     })
 
-    submission_path = os.path.join(output_dir, "submission_distilbert.csv")
+    submission_path = os.path.join(output_dir, f"submission_{exp_name}.csv")
     submission.to_csv(submission_path, index=False)
 
     print("Saved OOF:", oof_save_path)
@@ -115,4 +116,5 @@ def save_results(
     print("Saved Submission:", submission_path)
     print(submission["label"].value_counts())
     print("Done!", flush=True)
+
 

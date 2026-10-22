@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from transformers import AutoTokenizer
 
-from src.config import CFG, ID2LABEL, LABEL2ID
+from src.config import ID2LABEL, LABEL2ID, Config, get_config, parse_args
 from src.dataset import (
     TextDataset,
     create_test_loader,
@@ -23,34 +23,47 @@ from src.utils import (
 )
 
 
-def main():
-    os.makedirs(CFG.OUTPUT_DIR, exist_ok=True)
-    seed_everything(CFG.SEED)
-    n_gpus = print_system_info(CFG)
+def main(cfg: Config = None):
+    # Nếu không truyền cfg vào (ví dụ chạy từ CLI), tự động parse command-line arguments
+    if cfg is None:
+        cfg = parse_args()
+
+    os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
+    seed_everything(cfg.SEED)
+    n_gpus = print_system_info(cfg)
+
+    print(f"\n{'=' * 60}")
+    print(f"EXPERIMENT  : {cfg.EXP_NAME}")
+    print(f"MODEL PATH  : {cfg.MODEL_DIR}")
+    print(f"BATCH SIZE  : {cfg.BATCH_SIZE}")
+    print(f"LEARNING RT : {cfg.LR}")
+    print(f"EPOCHS      : {cfg.EPOCHS}")
+    print(f"OUTPUT DIR  : {cfg.OUTPUT_DIR}")
+    print(f"{'=' * 60}\n", flush=True)
 
     # 1. Load và kiểm định dữ liệu
     log_memory("Before CSV")
     train_df, test_df, counts = load_and_validate_data(
-        data_dir=CFG.DATA_DIR,
+        data_dir=cfg.DATA_DIR,
         label2id=LABEL2ID,
-        n_folds=CFG.N_FOLDS,
+        n_folds=cfg.N_FOLDS,
     )
     log_memory("After CSV")
 
     # 2. Chuẩn bị Tokenizer, Datasets và DataLoaders
-    print("\nLoading tokenizer...", flush=True)
-    tokenizer = AutoTokenizer.from_pretrained(CFG.MODEL_DIR)
+    print(f"\nLoading tokenizer for {cfg.MODEL_DIR}...", flush=True)
+    tokenizer = AutoTokenizer.from_pretrained(cfg.MODEL_DIR)
 
     train_dataset = TextDataset(
         train_df["text"],
         tokenizer,
-        CFG.MAX_LEN,
+        cfg.MAX_LEN,
         labels=train_df["target"].to_numpy(),
     )
     test_dataset = TextDataset(
         test_df["text"],
         tokenizer,
-        CFG.MAX_LEN,
+        cfg.MAX_LEN,
     )
 
     train_collate = make_collator(tokenizer, has_labels=True)
@@ -59,22 +72,22 @@ def main():
     test_loader = create_test_loader(
         test_dataset,
         collate_fn=test_collate,
-        batch_size=CFG.BATCH_SIZE * 2,
-        num_workers=CFG.NUM_WORKERS,
+        batch_size=cfg.BATCH_SIZE * 2,
+        num_workers=cfg.NUM_WORKERS,
     )
 
     # 3. Thiết lập hàm Loss (có tính class weights bù trừ mất cân bằng nhãn)
     criterion = calculate_class_weights(
         counts=counts,
         n_samples=len(train_df),
-        device=CFG.DEVICE,
+        device=cfg.DEVICE,
     )
 
     # 4. Stratified K-Fold Training Loop
     skf = StratifiedKFold(
-        n_splits=CFG.N_FOLDS,
+        n_splits=cfg.N_FOLDS,
         shuffle=True,
-        random_state=CFG.SEED,
+        random_state=cfg.SEED,
     )
 
     oof_probs = np.zeros((len(train_df), 3), dtype=np.float32)
@@ -94,16 +107,23 @@ def main():
             train_collate=train_collate,
             criterion=criterion,
             n_gpus=n_gpus,
-            cfg=CFG,
+            cfg=cfg,
             y_val_true=y_val_true,
         )
 
         oof_probs[val_idx] = fold_val_probs
-        test_probs += fold_test_probs / CFG.N_FOLDS
+        test_probs += fold_test_probs / cfg.N_FOLDS
 
     # 5. Đánh giá OOF và xuất kết quả
     summarize_oof(train_df["target"], oof_probs, ID2LABEL)
-    save_results(CFG.OUTPUT_DIR, oof_probs, test_probs, test_df, ID2LABEL)
+    save_results(
+        output_dir=cfg.OUTPUT_DIR,
+        exp_name=cfg.EXP_NAME,
+        oof_probs=oof_probs,
+        test_probs=test_probs,
+        test_df=test_df,
+        id2label=ID2LABEL,
+    )
 
 
 if __name__ == "__main__":

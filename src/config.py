@@ -1,40 +1,47 @@
+import argparse
 import os
-import torch
+from dataclasses import dataclass
+from typing import Any, Optional
 
 
-class CFG:
-    # Tự động nhận diện đường dẫn trên Kaggle hoặc Local
-    if os.path.exists("/kaggle/input/competitions/rmit-hackathon-2026"):
-        DATA_DIR = "/kaggle/input/competitions/rmit-hackathon-2026"
-        OUTPUT_DIR = "/kaggle/working/output"
-    elif os.path.exists("/kaggle/input/rmit-hackathon-2026"):
-        DATA_DIR = "/kaggle/input/rmit-hackathon-2026"
-        OUTPUT_DIR = "/kaggle/working/output"
-    elif os.path.exists("data/raw"):
-        DATA_DIR = "data/raw"
-        OUTPUT_DIR = "output"
-    else:
-        DATA_DIR = "data/raw"
-        OUTPUT_DIR = "output"
-
-    MODEL_DIR = "/kaggle/input/models/aisuko/distilbert-base-multilingual-cased/transformers/default/1"
-    if not os.path.exists(MODEL_DIR):
-        MODEL_DIR = "distilbert-base-multilingual-cased"
-
-    SEED = 42
-    N_FOLDS = 5
-    EPOCHS = 3
-
-    # Batch size & optimizer params
-    BATCH_SIZE = 16
-    MAX_LEN = 256
-    LR = 2e-5
-    WEIGHT_DECAY = 0.01
-    WARMUP_RATIO = 0.1
-
-    DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    NUM_WORKERS = 0
-
+# Bảng presets dành cho các models phổ biến trong thi NLP / Hackathon
+MODEL_PRESETS = {
+    "distilbert": {
+        "model_name": "distilbert-base-multilingual-cased",
+        "kaggle_path": "/kaggle/input/models/aisuko/distilbert-base-multilingual-cased/transformers/default/1",
+        "lr": 2e-5,
+        "batch_size": 16,
+        "max_len": 256,
+    },
+    "xlm-roberta": {
+        "model_name": "xlm-roberta-base",
+        "kaggle_path": "/kaggle/input/xlm-roberta-base",
+        "lr": 1.5e-5,
+        "batch_size": 16,
+        "max_len": 256,
+    },
+    "mdeberta": {
+        "model_name": "microsoft/mdeberta-v3-base",
+        "kaggle_path": "/kaggle/input/mdeberta-v3-base",
+        "lr": 1e-5,
+        "batch_size": 8,
+        "max_len": 256,
+    },
+    "phobert": {
+        "model_name": "vinai/phobert-base-v2",
+        "kaggle_path": "/kaggle/input/phobert-base-v2",
+        "lr": 2e-5,
+        "batch_size": 16,
+        "max_len": 256,
+    },
+    "bert-multilingual": {
+        "model_name": "bert-base-multilingual-cased",
+        "kaggle_path": "/kaggle/input/bert-base-multilingual-cased",
+        "lr": 2e-5,
+        "batch_size": 16,
+        "max_len": 256,
+    },
+}
 
 LABEL2ID = {
     "BENIGN": 0,
@@ -42,3 +49,165 @@ LABEL2ID = {
     "PROMPT_INJECTION": 2,
 }
 ID2LABEL = {v: k for k, v in LABEL2ID.items()}
+
+
+def resolve_data_dir(custom_path: Optional[str] = None) -> str:
+    """Tự động nhận diện đường dẫn dữ liệu."""
+    if custom_path and os.path.exists(custom_path):
+        return custom_path
+    if os.path.exists("/kaggle/input/competitions/rmit-hackathon-2026"):
+        return "/kaggle/input/competitions/rmit-hackathon-2026"
+    if os.path.exists("/kaggle/input/rmit-hackathon-2026"):
+        return "/kaggle/input/rmit-hackathon-2026"
+    if os.path.exists("data/raw"):
+        return "data/raw"
+    return "data/raw"
+
+
+def resolve_output_dir(custom_path: Optional[str] = None) -> str:
+    """Tự động nhận diện đường dẫn thư mục xuất kết quả."""
+    if custom_path:
+        return custom_path
+    if os.path.exists("/kaggle/working"):
+        return "/kaggle/working/output"
+    return "output"
+
+
+@dataclass
+class Config:
+    """Class cấu hình linh hoạt, hỗ trợ truy xuất case-insensitive và dynamic presets."""
+    model_name_or_path: str = "distilbert-base-multilingual-cased"
+    exp_name: str = "distilbert"
+    data_dir: str = ""
+    output_dir: str = ""
+    seed: int = 42
+    n_folds: int = 5
+    epochs: int = 3
+    batch_size: int = 16
+    max_len: int = 256
+    lr: float = 2e-5
+    weight_decay: float = 0.01
+    warmup_ratio: float = 0.1
+    num_workers: int = 0
+    _device: Optional[Any] = None
+
+    def __post_init__(self):
+        if not self.data_dir:
+            self.data_dir = resolve_data_dir()
+        if not self.output_dir:
+            self.output_dir = resolve_output_dir()
+
+    @property
+    def device(self):
+        if self._device is None:
+            import torch
+            self._device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        return self._device
+
+    @device.setter
+    def device(self, val):
+        self._device = val
+
+    def __getattr__(self, name: str):
+        # Tương thích ngược: cho phép gọi cfg.MODEL_DIR, cfg.BATCH_SIZE, cfg.DEVICE...
+        lower = name.lower()
+        if lower == "device":
+            return self.device
+        if lower == "model_dir":
+            return self.model_name_or_path
+        if lower in self.__dict__:
+            return self.__dict__[lower]
+        raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
+
+
+def get_config(
+    preset: Optional[str] = None,
+    model_name: Optional[str] = None,
+    exp_name: Optional[str] = None,
+    **kwargs,
+) -> Config:
+    """Tạo đối tượng Config linh hoạt từ preset hoặc tên model Hugging Face."""
+    base_params = {}
+
+    if preset:
+        preset_key = preset.lower()
+        if preset_key in MODEL_PRESETS:
+            p = MODEL_PRESETS[preset_key]
+            base_params["exp_name"] = preset_key
+            # Kiểm tra xem đường dẫn Kaggle offline có tồn tại không
+            if p.get("kaggle_path") and os.path.exists(p["kaggle_path"]):
+                base_params["model_name_or_path"] = p["kaggle_path"]
+            else:
+                base_params["model_name_or_path"] = p["model_name"]
+            base_params["lr"] = p["lr"]
+            base_params["batch_size"] = p["batch_size"]
+            base_params["max_len"] = p["max_len"]
+        else:
+            base_params["model_name_or_path"] = preset
+            base_params["exp_name"] = preset.split("/")[-1]
+
+    if model_name:
+        base_params["model_name_or_path"] = model_name
+        if not exp_name and "exp_name" not in base_params:
+            base_params["exp_name"] = model_name.split("/")[-1].replace("/", "_")
+
+    if exp_name:
+        base_params["exp_name"] = exp_name
+
+    # Cập nhật các kwargs được truyền vào trực tiếp
+    for k, v in kwargs.items():
+        if v is not None:
+            base_params[k.lower()] = v
+
+    return Config(**base_params)
+
+
+def parse_args() -> Config:
+    """Parse tham số dòng lệnh (CLI) để chạy finetune nhanh chóng."""
+    parser = argparse.ArgumentParser(description="LockIn RMIT Hackathon Training Pipeline")
+    parser.add_argument(
+        "--preset", "-p", type=str, default=None,
+        choices=list(MODEL_PRESETS.keys()),
+        help="Chọn preset model (distilbert, xlm-roberta, mdeberta, phobert, etc.)",
+    )
+    parser.add_argument(
+        "--model", "-m", type=str, default=None,
+        help="Tên model Hugging Face (vd: microsoft/mdeberta-v3-base) hoặc đường dẫn local",
+    )
+    parser.add_argument(
+        "--exp_name", type=str, default=None,
+        help="Tên experiment đặt cho file weights/oof/submission",
+    )
+    parser.add_argument("--batch_size", "-b", type=int, default=None, help="Batch size")
+    parser.add_argument("--lr", type=float, default=None, help="Learning rate")
+    parser.add_argument("--epochs", "-e", type=int, default=None, help="Số epochs")
+    parser.add_argument("--max_len", type=int, default=None, help="Max sequence length")
+    parser.add_argument("--n_folds", type=int, default=None, help="Số folds")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed")
+    parser.add_argument("--data_dir", type=str, default=None, help="Đường dẫn thư mục data")
+    parser.add_argument("--output_dir", type=str, default=None, help="Đường dẫn thư mục output")
+
+    args, _ = parser.parse_known_args()
+
+    # Mặc định là preset distilbert nếu không truyền gì
+    preset = args.preset
+    if not preset and not args.model:
+        preset = "distilbert"
+
+    return get_config(
+        preset=preset,
+        model_name=args.model,
+        exp_name=args.exp_name,
+        batch_size=args.batch_size,
+        lr=args.lr,
+        epochs=args.epochs,
+        max_len=args.max_len,
+        n_folds=args.n_folds,
+        seed=args.seed,
+        data_dir=args.data_dir,
+        output_dir=args.output_dir,
+    )
+
+
+# CFG mặc định tương thích ngược cho các file import trực tiếp
+CFG = get_config(preset="distilbert")
